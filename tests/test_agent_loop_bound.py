@@ -1,4 +1,5 @@
 """Tests for agent-loop-bound-py."""
+
 import pytest
 from agent_loop_bound import LoopBound, LoopLimitExceeded, bounded, iter_bounded
 
@@ -146,3 +147,47 @@ def test_no_label_in_error():
     exc = exc_info.value
     assert exc.label == ""
     assert exc.limit == 1
+
+
+def test_zero_max_iterations_raises_on_first_tick():
+    bound = LoopBound(max_iterations=0)
+    assert bound.exhausted is True
+    assert bound.remaining == 0
+    with pytest.raises(LoopLimitExceeded):
+        bound.tick()
+
+
+def test_negative_max_iterations_rejected():
+    with pytest.raises(ValueError):
+        LoopBound(max_iterations=-1)
+
+
+def test_non_int_max_iterations_rejected():
+    with pytest.raises(TypeError):
+        LoopBound(max_iterations=3.5)
+
+
+def test_bool_max_iterations_rejected():
+    # bool is a subclass of int; passing one is a programmer error.
+    with pytest.raises(TypeError):
+        LoopBound(max_iterations=True)
+
+
+def test_bounded_factory_validates():
+    with pytest.raises(ValueError):
+        bounded(-5)
+
+
+def test_iter_bounded_is_lazy():
+    # iter_bounded should not consume the whole iterable before raising.
+    consumed = []
+
+    def gen():
+        for i in range(100):
+            consumed.append(i)
+            yield i
+
+    with pytest.raises(LoopLimitExceeded):
+        list(iter_bounded(gen(), max_iterations=3))
+    # Only a bounded prefix of the source should have been pulled.
+    assert consumed == [0, 1, 2, 3]

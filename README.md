@@ -46,6 +46,9 @@ for step in iter_bounded(agent_steps(), max_iterations=50):
     process(step)
 ```
 
+`max_iterations` must be a non-negative `int`; anything else raises
+`TypeError` / `ValueError` at construction so misconfigured guards fail fast.
+
 ## License
 
 MIT

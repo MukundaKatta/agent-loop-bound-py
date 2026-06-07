@@ -51,6 +51,18 @@ class LoopBound:
     label: str = ""
     _count: int = field(default=0, init=False, repr=False)
 
+    def __post_init__(self) -> None:
+        if isinstance(self.max_iterations, bool) or not isinstance(
+            self.max_iterations, int
+        ):
+            raise TypeError(
+                f"max_iterations must be an int, got {type(self.max_iterations).__name__}"
+            )
+        if self.max_iterations < 0:
+            raise ValueError(
+                f"max_iterations must be non-negative, got {self.max_iterations}"
+            )
+
     def tick(self) -> int:
         """
         Advance the iteration counter by one.
@@ -101,6 +113,7 @@ class LoopBound:
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             with self:
                 return fn(*args, **kwargs)
+
         return wrapper
 
 
